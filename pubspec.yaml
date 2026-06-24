@@ -1,0 +1,26 @@
+name: qr_generator
+description: A Material 3 Flutter QR code generator for desktop and mobile.
+publish_to: "none"
+
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  image: ^4.2.0
+  path_provider: ^2.1.4
+  qr_flutter: ^4.1.0
+  shared_preferences: ^2.2.3
+  universal_html: ^2.2.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
