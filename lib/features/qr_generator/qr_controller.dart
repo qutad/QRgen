@@ -92,7 +92,7 @@ class QrState {
   bool get canGenerate => text.trim().isNotEmpty;
   bool get hasGeneratedQr => generatedText.isNotEmpty;
   Color get color => Color(colorValue);
-  double get previewSize => [180.0, 240.0, 310.0][sizeIndex];
+  double get previewSize => [180.0, 250.0, 320.0][sizeIndex];
   double get exportSize => [512.0, 768.0, 1024.0][sizeIndex];
 
   QrState copyWith({

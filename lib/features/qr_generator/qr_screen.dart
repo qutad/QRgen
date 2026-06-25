@@ -64,37 +64,116 @@ class _QrScreenState extends ConsumerState<QrScreen> {
             );
           }
 
-          return SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 780),
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 34, 20, 48),
-                  children: [
-                    SectionCard(
-                        child: _Controls(
-                            state: qrState, textController: _textController)),
-                    const SizedBox(height: 22),
-                    SectionCard(child: _Preview(state: qrState)),
-                    if (qrState.hasGeneratedQr) ...[
-                      const SizedBox(height: 18),
-                      FilledButton.icon(
-                        onPressed: _isExporting ? null : _exportPng,
-                        icon: _isExporting
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.download_rounded),
-                        label:
-                            Text(_isExporting ? 'Exporting...' : 'Export PNG'),
-                      ),
-                    ],
-                  ],
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final layoutWidth =
+                  constraints.maxWidth.clamp(500.0, double.infinity).toDouble();
+              final layoutHeight = constraints.maxHeight;
+              final compact = layoutWidth < 900 || layoutHeight < 900;
+              final twoColumn = layoutWidth >= 760;
+              final pagePadding = compact ? 12.0 : 24.0;
+              final gap = compact ? 12.0 : 24.0;
+              final cardPadding = compact ? 16.0 : 32.0;
+              final contentWidth = layoutWidth - pagePadding * 2;
+              final contentHeight = layoutHeight - pagePadding * 2;
+              final appWidth = contentWidth
+                  .clamp(500.0 - pagePadding * 2, twoColumn ? 1180.0 : 820.0)
+                  .toDouble();
+              final preferredHeight = twoColumn ? 700.0 : 750.0;
+              final appHeight =
+                  contentHeight.clamp(0.0, preferredHeight).toDouble();
+              final previewWidth =
+                  twoColumn ? (contentWidth - gap) * 0.42 : contentWidth;
+              final previewHeight = twoColumn
+                  ? appHeight - (qrState.hasGeneratedQr ? 54 : 0)
+                  : appHeight * (qrState.hasGeneratedQr ? 0.32 : 0.24);
+              final maxQrSize = [
+                previewWidth - cardPadding * 2 - 32,
+                previewHeight - cardPadding * 2 - 32,
+                qrState.previewSize,
+              ]
+                  .reduce((value, element) => value < element ? value : element)
+                  .clamp(88.0, qrState.previewSize)
+                  .toDouble();
+
+              final controls = SectionCard(
+                padding: EdgeInsets.all(cardPadding),
+                child: _Controls(
+                  state: qrState,
+                  textController: _textController,
+                  compact: compact,
                 ),
-              ),
-            ),
+              );
+              final preview = SectionCard(
+                padding: EdgeInsets.all(cardPadding),
+                child: _Preview(
+                  state: qrState,
+                  maxQrSize: maxQrSize,
+                  compact: compact,
+                ),
+              );
+              final exportButton = qrState.hasGeneratedQr
+                  ? FilledButton.icon(
+                      onPressed: _isExporting ? null : _exportPng,
+                      icon: _isExporting
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.download_rounded),
+                      label: Text(_isExporting ? 'Exporting...' : 'Export PNG'),
+                    )
+                  : null;
+
+              return SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.all(pagePadding),
+                  child: Center(
+                    child: SizedBox(
+                      width: appWidth,
+                      height: appHeight,
+                      child: twoColumn
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(flex: 6, child: controls),
+                                SizedBox(width: gap),
+                                Expanded(
+                                  flex: 5,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Expanded(child: preview),
+                                      if (exportButton != null) ...[
+                                        SizedBox(height: gap),
+                                        SizedBox(
+                                            height: 44, child: exportButton),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(flex: 8, child: controls),
+                                SizedBox(height: gap),
+                                Expanded(
+                                    flex: qrState.hasGeneratedQr ? 3 : 2,
+                                    child: preview),
+                                if (exportButton != null) ...[
+                                  SizedBox(height: gap),
+                                  SizedBox(height: 44, child: exportButton),
+                                ],
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
@@ -121,14 +200,24 @@ class _QrScreenState extends ConsumerState<QrScreen> {
 }
 
 class _Controls extends ConsumerWidget {
-  const _Controls({required this.state, required this.textController});
+  const _Controls({
+    required this.state,
+    required this.textController,
+    required this.compact,
+  });
 
   final QrState state;
   final TextEditingController textController;
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(qrControllerProvider.notifier);
+
+    final titleSpacing = compact ? 12.0 : 28.0;
+    final fieldSpacing = compact ? 8.0 : 12.0;
+    final sectionSpacing = compact ? 14.0 : 28.0;
+    final colorSize = compact ? 38.0 : 50.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,43 +230,51 @@ class _Controls extends ConsumerWidget {
                 letterSpacing: 2.8,
               ),
         ),
-        const SizedBox(height: 28),
+        SizedBox(height: titleSpacing),
         TextField(
           controller: textController,
           onChanged: controller.setText,
-          decoration: const InputDecoration(labelText: 'URL or text'),
+          decoration: InputDecoration(
+            labelText: 'URL or text',
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: compact ? 14 : 22,
+            ),
+          ),
           style: Theme.of(context).textTheme.titleMedium,
           textInputAction: TextInputAction.done,
         ),
-        const Padding(
-          padding: EdgeInsets.only(left: 22, top: 12),
-          child: Text('Paste any URL, email, phone, or plain text'),
+        Padding(
+          padding: EdgeInsets.only(left: 22, top: fieldSpacing),
+          child: const Text('Paste any URL, email, phone, or plain text'),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 30),
-          child: Divider(),
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: compact ? 10 : 28),
+          child: const Divider(),
         ),
         const _FieldLabel('Size'),
-        const SizedBox(height: 12),
+        SizedBox(height: fieldSpacing),
         _SegmentedOptions(
           labels: const ['Small', 'Medium', 'Large'],
           selectedIndex: state.sizeIndex,
           onSelected: controller.setSizeIndex,
+          compact: compact,
         ),
-        const SizedBox(height: 28),
+        SizedBox(height: sectionSpacing),
         const _FieldLabel('Error correction'),
-        const SizedBox(height: 12),
+        SizedBox(height: fieldSpacing),
         _SegmentedOptions(
           labels: const ['Low', 'Medium', 'High', 'Max'],
           selectedIndex: state.errorCorrectionIndex,
           onSelected: controller.setErrorCorrectionIndex,
+          compact: compact,
         ),
-        const SizedBox(height: 28),
+        SizedBox(height: sectionSpacing),
         const _FieldLabel('Color'),
-        const SizedBox(height: 12),
+        SizedBox(height: fieldSpacing),
         Wrap(
-          spacing: 14,
-          runSpacing: 14,
+          spacing: compact ? 10 : 16,
+          runSpacing: compact ? 10 : 16,
           children: _QrScreenState._colors.map((color) {
             final selected = color.toARGB32() == state.colorValue;
             return InkResponse(
@@ -185,8 +282,8 @@ class _Controls extends ConsumerWidget {
               radius: 28,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                width: 48,
-                height: 48,
+                width: colorSize,
+                height: colorSize,
                 decoration: BoxDecoration(
                   color: color,
                   shape: BoxShape.circle,
@@ -202,7 +299,8 @@ class _Controls extends ConsumerWidget {
             );
           }).toList(),
         ),
-        const SizedBox(height: 32),
+        const Spacer(),
+        SizedBox(height: compact ? 12 : 32),
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
@@ -217,39 +315,59 @@ class _Controls extends ConsumerWidget {
 }
 
 class _Preview extends ConsumerWidget {
-  const _Preview({required this.state});
+  const _Preview({
+    required this.state,
+    required this.maxQrSize,
+    required this.compact,
+  });
 
   final QrState state;
+  final double maxQrSize;
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!state.hasGeneratedQr) {
-      return const SizedBox(
-        height: 210,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.qr_code_scanner_rounded,
-                size: 70, color: Color(0xFF706C76)),
-            SizedBox(height: 18),
-            Text('Your QR code will appear here'),
-          ],
-        ),
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final showCaption = constraints.maxHeight >= 112;
+          final iconSize = constraints.maxHeight
+              .clamp(42.0, compact ? 58.0 : 76.0)
+              .toDouble();
+
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.qr_code_scanner_rounded,
+                  size: iconSize,
+                  color: const Color(0xFF706C76),
+                ),
+                if (showCaption) ...[
+                  SizedBox(height: compact ? 14 : 20),
+                  const Text('Your QR code will appear here'),
+                ],
+              ],
+            ),
+          );
+        },
       );
     }
 
     final service = ref.read(qrServiceProvider);
+    final framePadding = compact ? 12.0 : 18.0;
     return Center(
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: EdgeInsets.all(framePadding),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(compact ? 16 : 22),
         ),
         child: QrImageView(
           data: state.generatedText,
           version: QrVersions.auto,
-          size: state.previewSize,
+          size: maxQrSize,
           gapless: true,
           eyeStyle: QrEyeStyle(color: state.color, eyeShape: QrEyeShape.square),
           dataModuleStyle: QrDataModuleStyle(
@@ -280,17 +398,19 @@ class _SegmentedOptions extends StatelessWidget {
     required this.labels,
     required this.selectedIndex,
     required this.onSelected,
+    required this.compact,
   });
 
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 10,
-      runSpacing: 10,
+      spacing: compact ? 12 : 10,
+      runSpacing: compact ? 10 : 10,
       children: [
         for (final entry in labels.indexed)
           ChoiceChip(
