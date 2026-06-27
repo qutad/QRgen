@@ -110,11 +110,12 @@ jobs:
       - name: Create AppImage
         run: |
           mkdir -p AppDir/usr/bin
-          mkdir -p AppDir/usr/lib
           mkdir -p AppDir/usr/share/applications
           mkdir -p AppDir/usr/share/icons/hicolor/512x512/apps
 
           cp -r build/linux/x64/release/bundle/* AppDir/usr/bin/
+
+          cp web/icons/Icon-512.png AppDir/qr_generator.png
           cp web/icons/Icon-512.png AppDir/usr/share/icons/hicolor/512x512/apps/qr_generator.png
 
           cat > AppDir/qr_generator.desktop <<EOF
