@@ -219,97 +219,107 @@ class _Controls extends ConsumerWidget {
     final sectionSpacing = compact ? 14.0 : 28.0;
     final colorSize = compact ? 38.0 : 50.0;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'CREATE QR CODE',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppTheme.primary,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 2.8,
-              ),
-        ),
-        SizedBox(height: titleSpacing),
-        TextField(
-          controller: textController,
-          onChanged: controller.setText,
-          decoration: InputDecoration(
-            labelText: 'URL or text',
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: compact ? 14 : 22,
-            ),
-          ),
-          style: Theme.of(context).textTheme.titleMedium,
-          textInputAction: TextInputAction.done,
-        ),
-        Padding(
-          padding: EdgeInsets.only(left: 22, top: fieldSpacing),
-          child: const Text('Paste any URL, email, phone, or plain text'),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: compact ? 10 : 28),
-          child: const Divider(),
-        ),
-        const _FieldLabel('Size'),
-        SizedBox(height: fieldSpacing),
-        _SegmentedOptions(
-          labels: const ['Small', 'Medium', 'Large'],
-          selectedIndex: state.sizeIndex,
-          onSelected: controller.setSizeIndex,
-          compact: compact,
-        ),
-        SizedBox(height: sectionSpacing),
-        const _FieldLabel('Error correction'),
-        SizedBox(height: fieldSpacing),
-        _SegmentedOptions(
-          labels: const ['Low', 'Medium', 'High', 'Max'],
-          selectedIndex: state.errorCorrectionIndex,
-          onSelected: controller.setErrorCorrectionIndex,
-          compact: compact,
-        ),
-        SizedBox(height: sectionSpacing),
-        const _FieldLabel('Color'),
-        SizedBox(height: fieldSpacing),
-        Wrap(
-          spacing: compact ? 10 : 16,
-          runSpacing: compact ? 10 : 16,
-          children: _QrScreenState._colors.map((color) {
-            final selected = color.toARGB32() == state.colorValue;
-            return InkResponse(
-              onTap: () => controller.setColor(color),
-              radius: 28,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: colorSize,
-                height: colorSize,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: selected ? Colors.white : Colors.transparent,
-                    width: 3,
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: IntrinsicHeight(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'CREATE QR CODE',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2.8,
+                      ),
+                ),
+                SizedBox(height: titleSpacing),
+                TextField(
+                  controller: textController,
+                  onChanged: controller.setText,
+                  decoration: InputDecoration(
+                    labelText: 'URL or text',
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: compact ? 14 : 22,
+                    ),
+                  ),
+                  style: Theme.of(context).textTheme.titleMedium,
+                  textInputAction: TextInputAction.done,
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: 22, top: fieldSpacing),
+                  child:
+                      const Text('Paste any URL, email, phone, or plain text'),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: compact ? 10 : 28),
+                  child: const Divider(),
+                ),
+                const _FieldLabel('Size'),
+                SizedBox(height: fieldSpacing),
+                _SegmentedOptions(
+                  labels: const ['Small', 'Medium', 'Large'],
+                  selectedIndex: state.sizeIndex,
+                  onSelected: controller.setSizeIndex,
+                  compact: compact,
+                ),
+                SizedBox(height: sectionSpacing),
+                const _FieldLabel('Error correction'),
+                SizedBox(height: fieldSpacing),
+                _SegmentedOptions(
+                  labels: const ['Low', 'Medium', 'High', 'Max'],
+                  selectedIndex: state.errorCorrectionIndex,
+                  onSelected: controller.setErrorCorrectionIndex,
+                  compact: compact,
+                ),
+                SizedBox(height: sectionSpacing),
+                const _FieldLabel('Color'),
+                SizedBox(height: fieldSpacing),
+                Wrap(
+                  spacing: compact ? 10 : 16,
+                  runSpacing: compact ? 10 : 16,
+                  children: _QrScreenState._colors.map((color) {
+                    final selected = color.toARGB32() == state.colorValue;
+                    return InkResponse(
+                      onTap: () => controller.setColor(color),
+                      radius: 28,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: colorSize,
+                        height: colorSize,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: selected ? Colors.white : Colors.transparent,
+                            width: 3,
+                          ),
+                        ),
+                        child: selected
+                            ? const Icon(Icons.check, color: Colors.white)
+                            : null,
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const Spacer(),
+                SizedBox(height: compact ? 12 : 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: state.canGenerate ? controller.generate : null,
+                    icon: const Icon(Icons.qr_code_rounded),
+                    label: const Text('Generate'),
                   ),
                 ),
-                child: selected
-                    ? const Icon(Icons.check, color: Colors.white)
-                    : null,
-              ),
-            );
-          }).toList(),
-        ),
-        const Spacer(),
-        SizedBox(height: compact ? 12 : 32),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: state.canGenerate ? controller.generate : null,
-            icon: const Icon(Icons.qr_code_rounded),
-            label: const Text('Generate'),
+              ],
+            ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
