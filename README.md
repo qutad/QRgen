@@ -91,6 +91,7 @@ lib/
       qr_screen.dart
       qr_service.dart
 ```
+
       
-License:
+## License:    
 MIT License.
