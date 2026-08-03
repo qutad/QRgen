@@ -8,6 +8,11 @@ on:
       - "v*"
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag (for example, v0.1.0)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -157,7 +162,9 @@ jobs:
       - build-windows
       - build-linux-appimage
     runs-on: ubuntu-22.04
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' && startsWith(inputs.release_tag, 'v'))
 
     steps:
       - name: Download artifacts
@@ -168,6 +175,9 @@ jobs:
       - name: Publish release assets
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
           files: |
             artifacts/qr_generator-macos/qr_generator-macos.zip
             artifacts/qr_generator-windows/qr_generator-windows.zip
