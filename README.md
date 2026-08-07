@@ -1,6 +1,6 @@
 # QR Generator
 
-A Material 3 Flutter app for generating and exporting QR codes on desktop, mobile, and web.
+A Material 3 Flutter app for generating and exporting QR codes on desktop, mobile, and web
 
 ## Features
 
